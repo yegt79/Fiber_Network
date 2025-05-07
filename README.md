@@ -12,7 +12,7 @@ I’ve extensively modified the original framework to create a custom fiber netw
 The project draws from my study of the elastin network in the human aorta:
 
 - **Imaging**: I used a `multi-photon microscope` to image a purified human aortic sample, containing only elastin (no collagen or cells). The fibers were clearly visible.
-- ![Elastin Network](Figure_1_Elastin_Network)
+- ![Elastin Network](Figure_1_Elastin_Network.png)
 - **Analysis**: Using `ImageJ` plugins, I extracted fiber orientations and generated a histogram of their distribution.
 - **Purpose**: This data captures the structural organization of elastin fibers in the aorta.
 
