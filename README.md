@@ -98,16 +98,6 @@ In this case the tangential stiffness matrix $K_T$ can be constructed using just
 #### Non-conservative loading
 In the case where the external force depends on the solution $u$, the above assumption cannot be made and the whole residual must be taken into account when constructing the tangential stiffness matrix $K_T$. As a result, $K_T$ will be non-symmetric. Examples of these specific special cases are applied moments around a fixed axis, follower loads (i.e. loads that change direction based on the deformed configuration), pressure loads, etc.
 
-### The Arc-length method
-One of the main drawbacks of Newton's method is its inability to trace equilibrium paths with limit points. As a workaround, the load parameter $\lambda_n$ is now also an unknown parameter at each increment, and additional arc-length constraint is added. In this repository, we implement both the arc-length method for force control (i.e. problems with force boundary conditions) and displacement control (i.e problems with non-homogenous displacement boundary conditions).
-#### Force Control
-The additional arc-length constraint for force control is:
-
-```math
-\mathcal{A}(\mathbf{\mathbf{u}_{n+1}},\lambda_{n+1}) = \Delta\mathbf{u}^T\Delta\mathbf{u} + \psi\Delta\lambda^2 F_{ext}(\mathbf{u}_{n})^T F_{ext}(\mathbf{u}_{n})-(\Delta s)^2
-```
-
-where $\Delta s$ determines how far to search for the next equilibrium point and $\psi$ is the arc length parameter that gives you different arc-length solver schemes. When $\psi = 1$ (as like the examples in this repository), the arc-length equation is also known as the *spherical arc-length method*, and when $\psi = 0$ the *cylindrical arc-length* method is recovered.
 
 #### Displacement Control
 Sometimes instead of prescribing traction, the problem has a boundary condition with prescribed non-zero displacement (i.e. non-homogenous Dirichlet boundary conditions). In this case, similar to Ref.2, the problem is formulated similar to a multifreedom constraint and we construct a constraint matrix $C$ such that: 
@@ -129,79 +119,4 @@ where:
 
 ```math
  Q = C^TK_T\mathbf{u}_p
-```
-
-### Predictor-Corrector Scheme
-The predictor our arc-length implementation for both the force and displacement control scheme follows the implementation from Ref.3. The prediction step takes in the previous solution and extrapolates where:
-
-```math
-\mathbf{u}_{n+1}^{predicted} = [1+\alpha] \mathbf{u}_{n} -\alpha u_{n-1} \\
-\lambda_{n+1}^{predicted} = [1+\alpha] \lambda_n -\alpha \lambda_{n-1}
-```
-
-where $\alpha=\frac{\Delta s_n}{\Delta s_{n-1}}$ is the extrapolation parameter that depends on the arc-length parameter for the previous and current step. Using this extrapolation scheme both provides a good initial guess for the next equilibrium solution as well as identifies the correct direction for the next point in the equilibrium path. Our implementation allows for easy modification of this extrapolation scheme, as seen in the 3D beam example.
-
-The following Ref.3 and Ref.4, force control corrector scheme solves the augmented matrix equation:
-
-```math
-\begin{bmatrix}
-K_T & -F^{ext} \\
-\frac{\partial \mathcal{A}}{\partial u} & \frac{\partial \mathcal{A}}{\partial \lambda}
-\end{bmatrix} 
-\begin{bmatrix}
-\delta \mathbf{u} \\ \delta \lambda
-\end{bmatrix}
-= 
-\begin{bmatrix}
-\mathcal{R} \\ \mathcal{A}
-\end{bmatrix}
-```
-
-where 
-
-```math
-\Delta \mathbf{u}_{n+1} = \Delta \mathbf{u}_n + \delta \mathbf{u}  
-```
-
-```math
-\Delta \lambda_{n+1} = \Delta \lambda_n + \delta \lambda
-```
-
-The displacement control corrector scheme modifies the above equation to:
-
-```math
-\begin{bmatrix}
-C^\top K_T C & C^\top K \mathbf{u}_p \\
-\frac{\partial \mathcal{A}}{\partial \mathbf{u}_f} & \frac{\partial \mathcal{A}}{\partial \lambda}
-\end{bmatrix} 
-\begin{bmatrix}
-\delta \mathbf{u} \\ \delta \lambda
-\end{bmatrix}
-= 
-\begin{bmatrix}
-\mathcal{R} \\ \mathcal{A}
-\end{bmatrix}
-```
-
-Similar to Ref. 3 and Ref. 4, we solve the block system of equations by part using the Sherman–Morrison formula. For more details refer to the Ref 3 and Ref 4. 
-
-## Community Contributions
-
-If you find any issues, bugs or problems with FEniCS-arclength, please use report them using the [GitHub issue tracker](https://github.com/pprachas/fenics_arclength/issues). For efficiency, please include a minimum working example (to reproduce the error/bug) as well as the error itself.
-
-We also welcome any questions and suggestions in the using [Github Discussions](https://github.com/pprachas/fenics_arclength/discussions)!
-
-## Citation
-If you find this repository helpful, we would appreciate it if you cite us!
-```
-@article{Prachaseree_FEniCS-arclength_A_numerical_2024,
-author = {Prachaseree, Peerasait and Mohammadzadeh, Saeed and Dortdivanlioglu, Berkin and Lejeune, Emma},doi = {10.21105/joss.05727},
-journal = {Journal of Open Source Software},
-month = feb,
-number = {94},
-pages = {5727},
-title = {{FEniCS-arclength: A numerical continuation package in FEniCS for nonlinear problems in solid mechanics}},
-url = {https://joss.theoj.org/papers/10.21105/joss.05727},
-volume = {9},
-year = {2024}}
 ```
