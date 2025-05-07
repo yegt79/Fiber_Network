@@ -17,6 +17,8 @@ try:
 except:
     DOLFIN_EPS = None
 ######################################################################
+from dolfin import *
+import numpy as np
 
 class displacement_control: 
     ''' The arc-length displacement control solver of this library
@@ -31,15 +33,15 @@ class displacement_control:
         J : The Jacobian of the residual with respect to the deformation (tangential stiffness matrix)
         displacement_factor : The incremental displacement factor
         abs_tol (optional): absolute residual tolerance for the solver (default value: 1e-10)
-        rel_tol (optional): relative residual tolerance for solver; the relative residual is defined as the ration between the current residual and initial residual of the displacement step (default value: DOLFIN_EPS)
+        rel_tol (optional): relative residual tolerance for solver; the relative residual is defined as the ratio between the current residual and initial residual of the displacement step (default value: DOLFIN_EPS)
         solver (optional): type of linear solver for the FEniCS linear solve function -- default FEniCS linear solver is used if no argument is used.
     '''
 
-    def __init__(self, psi, lmbda0, max_iter, u, F_int, F_ext, bcs, J, displacement_factor, abs_tol = 1e-10, rel_tol = DOLFIN_EPS, solver='default'):
+    def __init__(self, psi, lmbda0, max_iter, u, F_int, F_ext, bcs, J, displacement_factor, abs_tol=1e-10, rel_tol=DOLFIN_EPS, solver='default'):
         # Initialize Variables
         self.psi = psi
         self.abs_tol = abs_tol
-        self.rel_tol = rel_tol
+        self.rel_tol = rel_tol if rel_tol is not None else 1e-5
         self.lmbda = lmbda0
         self.max_iter = max_iter
         self.F_int = F_int
@@ -48,8 +50,11 @@ class displacement_control:
         self.J = J
         self.bcs = bcs
         self.displacement_factor = displacement_factor
-        self.residual = F_int-F_ext
-        self.solver = solver
+        self.residual = F_int - F_ext
+        self.solver = 'cg'
+        self.preconditioner = 'amg'
+        self.fallback_solver = 'gmres'
+        self.fallback_preconditioner = 'hypre_amg'
         self.counter = 0
         self.converged = True
     
@@ -59,27 +64,21 @@ class displacement_control:
         
         Args:
             u_new: updated solution
-
         '''
-
-        # Function to update displacements
         u_nodal_values = u_new.get_local()
         self.u.vector().set_local(u_nodal_values)
     
     def __initial_step(self):
         '''
-        Inital step of the arc-length method. 
+        Initial step of the arc-length method. 
         For the displacement control formulation, this function constructs the constraint matrix and the initial arc-length step size.
         '''    
-
-        ii=0
-        print('Starting initial Displacement Control Control with Newton Method:')
+        ii = 0
         
-        # Find DoFs for homogenous and nonhomogenous Dirichlet BCs:
-        self.displacement_factor.t = 1.0 #set nonhomogenous DoFs to 1 
-        
-        self.dofs_hom = [] # list of DoFs with homogenous DoFs
-        self.dofs_nonhom = [] # list of DoFs with nonhomogenous DoFs
+        # Find DoFs for homogenous and nonhomogenous Dirichlet BCs
+        self.displacement_factor.t = 1.0
+        self.dofs_hom = []
+        self.dofs_nonhom = []
         for bc in self.bcs:
             for (dof, value) in bc.get_boundary_values().items():
                 if value == 0:
@@ -87,25 +86,23 @@ class displacement_control:
                 else:
                     self.dofs_nonhom.append(dof)
         
-        self.dofs_free = np.arange(0,len(self.u.vector()))
-                              
-        self.dofs_free = np.delete(self.dofs_free,(self.dofs_hom+self.dofs_nonhom)) # vector of free DoF
+        # Compute total DoFs using the function space's global dimension
+        V = self.u.function_space()
+        total_dofs = V.dofmap().global_dimension()
+        self.dofs_free = np.arange(0, total_dofs)
+        self.dofs_free = np.delete(self.dofs_free, (self.dofs_hom + self.dofs_nonhom))
         
-        # set up DoF vector of Dirchlet BCs:
+        # Set up DoF vector of Dirichlet BCs
         self.u_p = Vector()
         self.u_p.init(self.u.vector().size())
-        u_p_temp = [0]*self.u.vector().size()
-        
+        u_p_temp = [0] * self.u.vector().size()
         for dof in self.dofs_nonhom:
             u_p_temp[dof] = 1
-        
         self.u_p.set_local(u_p_temp)
-        
-                                  
         
         # Construct Constraint Matrix C
         C = PETScMatrix()
-        C_mat = C.mat() # use petsc interface
+        C_mat = C.mat()
         C_mat.create()
         C_mat.setSizes((self.u.vector().size(), len(self.dofs_free)))
         C_mat.setType('aij')
@@ -130,7 +127,7 @@ class displacement_control:
         self.C.init_vector(du, 0)
         self.C_mat = self.C.mat()
 
-        # Apply all Dirichlet (both homogenous and non-homogenous) BCs to u:
+        # Apply all Dirichlet (both homogenous and non-homogenous) BCs to u
         self.displacement_factor.t = self.lmbda
         for bc in self.bcs:
             bc.apply(self.u.vector())
@@ -143,10 +140,10 @@ class displacement_control:
             # Get K*, F*, and R* (reduced matrices and vectors)
             K_mat = as_backend_type(K).mat()
             temp = self.C_mat.copy().transpose().matMult(K_mat)
-            K_star_mat = temp.matMult(self.C_mat) # Reduced stiffness matrix
+            K_star_mat = temp.matMult(self.C_mat)
             K_star = Matrix(PETScMatrix(K_star_mat))
-            PETScMatrix(temp).mult(-self.u_p, self.Q) # vector of Dirichlet BCs
-            self.C.transpmult(R, R_star) # reduced residual vector
+            PETScMatrix(temp).mult(-self.u_p, self.Q)
+            self.C.transpmult(R, R_star)
 
             norm = R_star.norm('l2')
 
@@ -154,53 +151,66 @@ class displacement_control:
             if ii == 0:
                 norm0 = norm
             
-            print(f'Iteration {ii}: | \nAbsolute Residual: {norm:.4e}| Relative Residual: {norm/norm0:.4e}')
-            if norm < self.abs_tol or norm/norm0 < self.rel_tol:
+            norm0 = norm0 if norm0 > DOLFIN_EPS else DOLFIN_EPS
+            relative_residual = norm / norm0
+            
+            if norm < self.abs_tol or relative_residual < self.rel_tol:
                 self.delta_s = sqrt(self.u_f.inner(self.u_f) + self.psi * self.lmbda**2 * self.Q.inner(self.Q))
                 self.counter = 1
                 break
 
-            ii+=1
+            ii += 1
             assert ii <= self.max_iter, 'Newton Solver not converging'
 
             du_f = Vector()
             du = Vector()
-            solve(K_star, du_f, R_star, self.solver) # solve reduced problem
-            self.C.mult(du_f, du) # convert to global displacement vector
-            self.__update_nodal_values(self.u.vector()-du) # update solution
-            self.u_f -= du_f # update free DoFs for calculation of s
+            if norm < DOLFIN_EPS and K_star.norm('frobenius') < DOLFIN_EPS:
+                du_f.zero()
+            else:
+                try:
+                    solver = PETScKrylovSolver(self.solver, self.preconditioner)
+                    solver.parameters["relative_tolerance"] = 1e-5
+                    solver.parameters["absolute_tolerance"] = 1e-10
+                    solver.parameters["maximum_iterations"] = 30000
+                    solver.solve(K_star, du_f, R_star)
+                except RuntimeError as e:
+                    fallback_solver = PETScKrylovSolver(self.fallback_solver, self.fallback_preconditioner)
+                    fallback_solver.parameters["relative_tolerance"] = 1e-5
+                    fallback_solver.parameters["absolute_tolerance"] = 1e-10
+                    fallback_solver.parameters["maximum_iterations"] = 30000
+                    fallback_solver.solve(K_star, du_f, R_star)
+            self.C.mult(du_f, du)
+            self.__update_nodal_values(self.u.vector() - du)
+            self.u_f -= du_f
         
     def solve(self):
         '''
         Main function to increment through the arc-length scheme. 
         '''
         if self.counter == 0:
-            print('Initializing solver parameters...')
             self.__initial_step()
-        print('\nArc-Length Step', self.counter,':')
-        # initialization
+        
         u_update = Vector()
         u_update.init(self.u.vector().size())
         
         R_star = Vector()
-        self.C.init_vector(R_star,1)
+        self.C.init_vector(R_star, 1)
         
         if self.counter == 1:
             self.converged = False
-
             self.u_f_n, self.u_f_n_1 = Vector(), Vector()
             self.u_f_n.init(self.u_f.size())
             self.u_f_n_1.init(self.u_f.size())
             self.lmbda_n = 0
             self.lmbda_n_1 = 0
 
-        # Predictor Step: 
+        # Predictor Step
         else:
             alpha = self.delta_s / self.delta_s_n
-            self.u_f = (1+alpha) * self.u_f_n - alpha * self.u_f_n_1 # update the free nodes
-            self.C.mult(self.u_f, u_update) # free nodes to global displacement vector
+            self.u_f = (1 + alpha) * self.u_f_n - alpha * self.u_f_n_1
+            self.C.mult(self.u_f, u_update)
             self.__update_nodal_values(u_update)            
-            self.lmbda = (1+alpha) * self.lmbda_n - alpha * self.lmbda_n_1 # update displacement factor
+            self.lmbda = (1 + alpha) * self.lmbda_n - alpha * self.lmbda_n_1
             
         # Apply boundary conditions (both homogenous and nonhomogenous)
         self.displacement_factor.t = self.lmbda
@@ -213,29 +223,27 @@ class displacement_control:
         self.converged_prev = self.converged
         self.converged = False
         
-        # Corrector Step(i.e. arc-length solver):
+        # Corrector Step (i.e. arc-length solver)
         solver_iter = 0
         norm = 1
         while (norm > self.abs_tol or norm/norm0 > self.abs_tol) and solver_iter < self.max_iter:
-            
             # Assemble K and R
             K = assemble(self.J)
             R = assemble(self.residual)
 
-            #Get K*, F*, and R* (reduced matrices and vectors)
+            # Get K*, F*, and R* (reduced matrices and vectors)
             K_mat = as_backend_type(K).mat()
             temp = self.C_mat.copy().transpose().matMult(K_mat)
-            K_star_mat = temp.matMult(self.C_mat) 
-            K_star = Matrix(PETScMatrix(K_star_mat)) # reduced stiffness matrix
-            PETScMatrix(temp).mult(-self.u_p, self.Q) # vector of Dirichlet BCs
-            self.C.transpmult(R, R_star) # reduced residual vector
+            K_star_mat = temp.matMult(self.C_mat)
+            K_star = Matrix(PETScMatrix(K_star_mat))
+            PETScMatrix(temp).mult(-self.u_p, self.Q)
+            self.C.transpmult(R, R_star)
             
             QQ = self.Q.inner(self.Q)
 
-            # solve for d_lmbda, d_u:
+            # Solve for d_lmbda, d_u
             a = 2 * delta_u_f
             b = 2 * self.psi * delta_lmbda * QQ
-
             A = delta_u_f.inner(delta_u_f) + self.psi * delta_lmbda**2 * QQ - self.delta_s**2
             R_star_norm = R_star.norm('l2')
             norm = sqrt(R_star_norm**2 + A**2)
@@ -244,22 +252,32 @@ class displacement_control:
             if solver_iter == 0:
                 norm0 = norm
 
-            print(f'Iteration: {solver_iter} \n|Total Norm: {norm:.4e} |Residual: {R_star_norm:.4e} |A: {A:.4e}| Relative Norm : {norm/norm0 :.4e}')
-            if norm < self.abs_tol or norm/norm0 < self.rel_tol:
+            # Replace norm0 with a small value if it's zero
+            norm0 = norm0 if norm0 > DOLFIN_EPS else DOLFIN_EPS
+            relative_norm = norm / norm0
+            if norm < self.abs_tol or relative_norm < self.rel_tol:
                 self.converged = True
                 break
 
             du_f_1 = Vector()
             du_f_2 = Vector()
+            # Solve for du_f_1 and du_f_2 with relaxed tolerances
+            solver_1 = PETScKrylovSolver(self.solver, self.preconditioner)
+            solver_1.parameters["relative_tolerance"] = 1e-5
+            solver_1.parameters["absolute_tolerance"] = 1e-10
+            solver_1.parameters["maximum_iterations"] = 30000
+            solver_1.solve(K_star, du_f_1, self.Q)
 
-            solve(K_star, du_f_1, self.Q, self.solver)
-            solve(K_star, du_f_2, R_star, self.solver)
+            solver_2 = PETScKrylovSolver(self.solver, self.preconditioner)
+            solver_2.parameters["relative_tolerance"] = 1e-5
+            solver_2.parameters["absolute_tolerance"] = 1e-10
+            solver_2.parameters["maximum_iterations"] = 30000
+            solver_2.solve(K_star, du_f_2, R_star)
 
             dlmbda = (a.inner(du_f_2) - A) / (b + a.inner(du_f_1))
             du_f = -du_f_2 + dlmbda * du_f_1
 
-
-            # update delta_u, delta_lmbda, u, lmbda
+            # Update delta_u, delta_lmbda, u, lmbda
             delta_lmbda += dlmbda
             self.lmbda += dlmbda
             delta_u_f += du_f
@@ -270,31 +288,24 @@ class displacement_control:
 
             solver_iter += 1
 
-
             for bc in self.bcs:
                 bc.apply(self.u.vector())
             
-
-         # Solution Update
+        # Solution Update
         if self.converged:
             if self.counter == 1:
                 self.delta_s_max = self.delta_s
                 self.delta_s_min = self.delta_s / 1024.0
             
             self.delta_s_n = self.delta_s
-                
             self.u_f_n_1 = self.u_f_n
             self.lmbda_n_1 = self.lmbda_n
-        
             self.u_f_n = self.u_f.copy()
             self.lmbda_n = self.lmbda
-                
-            self.counter +=1 
+            self.counter += 1 
             
             if self.converged_prev:
-                self.delta_s = min(max(2*self.delta_s, self.delta_s_min), self.delta_s_max)
-                
-                
+                self.delta_s = min(max(2 * self.delta_s, self.delta_s_min), self.delta_s_max)
         else:
             if self.converged_prev:
                 self.delta_s = max(self.delta_s / 2, self.delta_s_min)
