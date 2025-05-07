@@ -12,6 +12,7 @@ I’ve extensively modified the original framework to create a custom fiber netw
 The project draws from my study of the elastin network in the human aorta:
 
 - **Imaging**: I used a `multi-photon microscope` to image a purified human aortic sample, containing only elastin (no collagen or cells). The fibers were clearly visible.
+- ![Elastin Network](Figure_1_Elastin_Network)
 - **Analysis**: Using `ImageJ` plugins, I extracted fiber orientations and generated a histogram of their distribution.
 - **Purpose**: This data captures the structural organization of elastin fibers in the aorta.
 
@@ -27,9 +28,6 @@ To translate the biological data into a computational model, I developed a custo
 > This approach creates a model that mirrors the real-world structure of human aortic elastin, enabling accurate simulation of its behavior under stretch.
 
 ---
-
-## Significance
-This work integrates experimental imaging with computational modeling, offering insights into the mechanics of aortic elastin. It’s a foundation for further biomechanical studies and potential applications in medical research.
 
 ## Dependencies <a name="dependencies"></a>
 This package relies on FEniCS 2019.1.0. (Note that this is the legacy version NOT FEniCSx). Brief installation instructions are outline below. For more information see the [official FEniCS installation instructions.](https://fenicsproject.org/download/archive/)
