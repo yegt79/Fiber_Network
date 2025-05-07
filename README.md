@@ -1,4 +1,3 @@
-# Fiber Network based on Human Elastin 
 
 # Fiber Network Based on Human Aortic Elastin
 
