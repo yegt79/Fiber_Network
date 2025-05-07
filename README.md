@@ -1,35 +1,5 @@
-# FEniCS Implementation of the Arc-length Method
-[![Documentation Status](https://readthedocs.org/projects/fenics-arclength/badge/?version=latest)](https://fenics-arclength.readthedocs.io/en/latest/?badge=latest)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/12Ss1RN7Smyrnn2671JloGphtiO1r_67J#scrollTo=AHwJEykSdkGp)
-[![DOI](https://zenodo.org/badge/590268096.svg)](https://zenodo.org/doi/10.5281/zenodo.10563094)
-[![status](https://joss.theoj.org/papers/c4791755683fc95dd5ccd9c8e8708a08/status.svg)](https://joss.theoj.org/papers/c4791755683fc95dd5ccd9c8e8708a08)
+# Fiber Network based on Human Elastin Network
 
-
-This repository contains the arc-length Riks solver written with FEniCS. Additional information, documentation, and example problems can be found our ReadTheDocs documentation:
-  
-<div align="center">
-
- |[ **Link to ReadTheDocs Documentation** ](https://fenics-arclength.readthedocs.io/en/latest/index.html)|
- |--------------------------------------------------------------------------|
- 
-<div align = "left">
-
-**[The accompanying paper to this Github Repository can be found here.](https://joss.theoj.org/papers/10.21105/joss.05727)**
-
-More information on the arc-length method and the solution approach can be found in:  
-1. [Nonlinear Analysis of Structures: The Arc Length Method](https://scholar.harvard.edu/files/vasios/files/ArcLength.pdf)  
-2. [Incremental displacement algorithms for nonlinear problems](https://onlinelibrary.wiley.com/doi/10.1002/nme.1620140811)  
-3. [A simple extrapolated predictor for overcoming the starting and tracking issues in the arc-length method for nonlinear structural mechanics](https://arxiv.org/abs/2005.10192)  
-4. [A dissipation-based arc-length method for robust simulation of brittle and ductile failure](https://onlinelibrary.wiley.com/doi/10.1002/nme.2447)
-
-## Table of Contents
-* [Dependencies](#dependencies)
-* [Installation](#installation)
-* [Contents in this Repository](#contents)
-* [Validation](#validation)
-* [Theory](#theory)
-* [Community Contributions](#community)
 
 
 ## Dependencies <a name="dependencies"></a>
