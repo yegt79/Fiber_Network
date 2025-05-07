@@ -1,6 +1,36 @@
 # Fiber Network based on Human Elastin 
 
+# Fiber Network Based on Human Aortic Elastin
 
+## Project Overview
+This project builds on the FEniCS tutorial for fiber networks, available at [FEniCS Arc-Length Fiber Network Tutorial](https://fenics-arclength.readthedocs.io/en/latest/examples/displacement_control/fiber_network.html). 
+
+I’ve extensively modified the original framework to create a custom fiber network model solved for `displacement control` under stretch, designed to replicate the biomechanical behavior of human aortic elastin.
+
+---
+
+## Research Foundation
+The project draws from my study of the elastin network in the human aorta:
+
+- **Imaging**: I used a `multi-photon microscope` to image a purified human aortic sample, containing only elastin (no collagen or cells). The fibers were clearly visible.
+- **Analysis**: Using `ImageJ` plugins, I extracted fiber orientations and generated a histogram of their distribution.
+- **Purpose**: This data captures the structural organization of elastin fibers in the aorta.
+
+---
+
+## Modeling the Network
+To translate the biological data into a computational model, I developed a custom script:
+
+- **Code**: Located in `src/custom_voronoi_generator.py`.
+- **Method**: The script uses `SciPy` to generate a `Voronoi-based mesh` from seed points.
+- **Alignment**: The mesh incorporates the fiber orientation histogram, ensuring edges align with the actual elastin fibers observed in the aortic sample.
+
+> This approach creates a model that mirrors the real-world structure of human aortic elastin, enabling accurate simulation of its behavior under stretch.
+
+---
+
+## Significance
+This work integrates experimental imaging with computational modeling, offering insights into the mechanics of aortic elastin. It’s a foundation for further biomechanical studies and potential applications in medical research.
 
 ## Dependencies <a name="dependencies"></a>
 This package relies on FEniCS 2019.1.0. (Note that this is the legacy version NOT FEniCSx). Brief installation instructions are outline below. For more information see the [official FEniCS installation instructions.](https://fenicsproject.org/download/archive/)
