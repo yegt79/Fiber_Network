@@ -30,26 +30,27 @@ To translate the biological data into a computational model, I developed a custo
 
 ---
 ## Applied Skills
-Technical Knowledge:
-• Apply matrix structural analysis methods to solve problems in mechanics, demonstrating
+
+# Technical Knowledge:
+- • Apply matrix structural analysis methods to solve problems in mechanics, demonstrating
 understanding of fundamental principles and mathematical formulations
-• Implement finite element analysis techniques for solving complex mechanical problems, including proper element selection and mesh refinement strategies
-• Analyze and solve problems involving material nonlinearity and geometric nonlinearity
-• Develop numerical solution strategies for nonlinear problems, including appropriate iteration
+- • Implement finite element analysis techniques for solving complex mechanical problems, including proper element selection and mesh refinement strategies
+- • Analyze and solve problems involving material nonlinearity and geometric nonlinearity
+- • Develop numerical solution strategies for nonlinear problems, including appropriate iteration
 schemes and convergence criteria
 
-Software Development & Implementation:
-• Write, test, and debug Python programs for computational mechanics applications using
+# Software Development & Implementation:
+- • Write, test, and debug Python programs for computational mechanics applications using
 modern development tools and practices
 Use version control effectively with Git and GitHub for code management
-• Implement proper documentation practices using Markdown and inline code documentation
+- • Implement proper documentation practices using Markdown and inline code documentation
 
-Professional Skills:
-• Evaluate and contribute to open-source scientific software projects in a professional manner
-• Debug and troubleshoot complex numerical implementations using systematic approaches
+# Professional Skills:
+- • Evaluate and contribute to open-source scientific software projects in a professional manner
+- • Debug and troubleshoot complex numerical implementations using systematic approaches
 
-Integration & Application:
-• Complete an independent project that demonstrates mastery of both technical concepts and
+# Integration & Application:
+- • Complete an independent project that demonstrates mastery of both technical concepts and
 software development practices
 
 ---
