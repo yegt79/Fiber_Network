@@ -55,7 +55,7 @@ software development practices
 
 ---
 
-## Reproducibility <a name="Reproducibility"></a>
+# Reproducibility <a name="Reproducibility"></a>
 This package relies on FEniCS 2019.1.0. (Note that this is the legacy version NOT FEniCSx). Brief installation instructions are outline below. For more information see the [official FEniCS installation instructions.](https://fenicsproject.org/download/archive/)
 
 ### FEniCS on Windows
